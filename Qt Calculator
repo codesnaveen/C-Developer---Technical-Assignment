@@ -1,0 +1,97 @@
+#include <QApplication>
+#include <QWidget>
+#include <QVBoxLayout>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QLabel>
+#include <QDoubleValidator>
+
+class Calculator : public QWidget {
+    Q_OBJECT
+
+public:
+    Calculator(QWidget *parent = nullptr) : QWidget(parent) {
+        setWindowTitle("Qt Calculator");
+        setFixedSize(300, 250);
+        
+        QVBoxLayout *layout = new QVBoxLayout(this);
+        
+        input1 = new QLineEdit(this);
+        input1->setPlaceholderText("Enter first number");
+        input1->setValidator(new QDoubleValidator(this));
+        
+        input2 = new QLineEdit(this);
+        input2->setPlaceholderText("Enter second number");
+        input2->setValidator(new QDoubleValidator(this));
+        
+        resultLabel = new QLabel("Result: ", this);
+        
+        QPushButton *addButton = new QPushButton("Add (+)", this);
+        QPushButton *subButton = new QPushButton("Subtract (-)", this);
+        QPushButton *mulButton = new QPushButton("Multiply (*)", this);
+        QPushButton *divButton = new QPushButton("Divide (/)", this);
+        QPushButton *clearButton = new QPushButton("Clear", this);
+        
+        layout->addWidget(input1);
+        layout->addWidget(input2);
+        layout->addWidget(addButton);
+        layout->addWidget(subButton);
+        layout->addWidget(mulButton);
+        layout->addWidget(divButton);
+        layout->addWidget(clearButton);
+        layout->addWidget(resultLabel);
+        
+        connect(addButton, &QPushButton::clicked, this, &Calculator::add);
+        connect(subButton, &QPushButton::clicked, this, &Calculator::subtract);
+        connect(mulButton, &QPushButton::clicked, this, &Calculator::multiply);
+        connect(divButton, &QPushButton::clicked, this, &Calculator::divide);
+        connect(clearButton, &QPushButton::clicked, this, &Calculator::clear);
+    }
+
+private slots:
+    void add() { calculate('+'); }
+    void subtract() { calculate('-'); }
+    void multiply() { calculate('*'); }
+    void divide() { calculate('/'); }
+    void clear() {
+        input1->clear();
+        input2->clear();
+        resultLabel->setText("Result: ");
+    }
+
+private:
+    QLineEdit *input1, *input2;
+    QLabel *resultLabel;
+    
+    void calculate(char op) {
+        bool ok1, ok2;
+        double num1 = input1->text().toDouble(&ok1);
+        double num2 = input2->text().toDouble(&ok2);
+        
+        if (!ok1 || !ok2) {
+            resultLabel->setText("Error: Enter valid numbers");
+            return;
+        }
+        
+        if (op == '/' && num2 == 0) {
+            resultLabel->setText("Error: Cannot divide by zero");
+            return;
+        }
+        
+        double res;
+        switch (op) {
+            case '+': res = num1 + num2; break;
+            case '-': res = num1 - num2; break;
+            case '*': res = num1 * num2; break;
+            case '/': res = num1 / num2; break;
+        }
+        resultLabel->setText("Result: " + QString::number(res));
+    }
+};
+
+int main(int argc, char *argv[]) {
+    QApplication app(argc, argv);
+    Calculator calculator;
+    calculator.show();
+    return app.exec();
+}
