@@ -1,0 +1,68 @@
+#include <iostream>
+#include <sqlite3.h>
+
+void executeQuery(sqlite3* db, const std::string& query) {
+    char* errMsg = nullptr;
+    if (sqlite3_exec(db, query.c_str(), nullptr, nullptr, &errMsg) != SQLITE_OK) {
+        std::cerr << "Error: " << errMsg << std::endl;
+        sqlite3_free(errMsg);
+    }
+}
+
+static int callback(void* NotUsed, int argc, char** argv, char** azColName) {
+    for (int i = 0; i < argc; i++) {
+        std::cout << azColName[i] << ": " << (argv[i] ? argv[i] : "NULL") << "\t";
+    }
+    std::cout << std::endl;
+    return 0;
+}
+
+int main() {
+    sqlite3* db;
+    if (sqlite3_open("users.db", &db)) {
+        std::cerr << "Error opening database: " << sqlite3_errmsg(db) << std::endl;
+        return 1;
+    }
+    
+    std::string createTableQuery = "CREATE TABLE IF NOT EXISTS Users (ID INTEGER PRIMARY KEY AUTOINCREMENT, Name TEXT, Age INTEGER);";
+    executeQuery(db, createTableQuery);
+
+    int choice;
+    do {
+        std::cout << "\nMenu:\n1. Insert\n2. Update\n3. Delete\n4. Display\n5. Exit\nChoice: ";
+        std::cin >> choice;
+        std::cin.ignore();
+
+        if (choice == 1) {
+            std::string name;
+            int age;
+            std::cout << "Enter Name: "; std::getline(std::cin, name);
+            std::cout << "Enter Age: "; std::cin >> age;
+            std::string query = "INSERT INTO Users (Name, Age) VALUES ('" + name + "', " + std::to_string(age) + ");";
+            executeQuery(db, query);
+        } 
+        else if (choice == 2) {
+            int id, age;
+            std::string name;
+            std::cout << "Enter ID to update: "; std::cin >> id;
+            std::cin.ignore();
+            std::cout << "Enter New Name: "; std::getline(std::cin, name);
+            std::cout << "Enter New Age: "; std::cin >> age;
+            std::string query = "UPDATE Users SET Name='" + name + "', Age=" + std::to_string(age) + " WHERE ID=" + std::to_string(id) + ";";
+            executeQuery(db, query);
+        } 
+        else if (choice == 3) {
+            int id;
+            std::cout << "Enter ID to delete: "; std::cin >> id;
+            std::string query = "DELETE FROM Users WHERE ID=" + std::to_string(id) + ";";
+            executeQuery(db, query);
+        } 
+        else if (choice == 4) {
+            std::cout << "User Records:\n";
+            sqlite3_exec(db, "SELECT * FROM Users;", callback, nullptr, nullptr);
+        }
+    } while (choice != 5);
+    
+    sqlite3_close(db);
+    return 0;
+}
